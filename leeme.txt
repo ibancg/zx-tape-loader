@@ -1,0 +1,26 @@
+
+ LOADER v2.0
+
+ (c) 2001 Ibán Cereijo Graña. 06-08-2001
+
+  Cargador de cintas de SPECTRUM mediante tarjeta de sonido. Conversión a
+ formato TAP.
+
+  La versión 1.0 podía cargar datos siempre que se dispusiera de cabecera.
+ Considerando las cabeceras como un tipo particular de datos (en cuanto al
+ formato en cinta, no tiene sentido pensarlo en la memoria del spectrum),
+ y teniendo en cuenta que hay programas con rutinas de carga propias que
+ no necesitan cabeceras, en la nueva versión se pueden cargar datos sin ca-
+ becera.
+
+  Además en esta versión la lectura de la señal se hace por flancos y no
+ por máximos como se hacía en la versión 1.0. La razón se debe a que las
+ formas de onda pueden tener añadidas componentes de distintas frecuencias
+ y la lectura por flancos es más invulnerable a este efecto. Además de que
+ la propia rutina de carga del ZX Spectrum funcionaba por flancos.
+
+  Realmente, la lectura por flancos es más invulnerable a la adición de al-
+ tas frecuencias, pero no de bajas. Con bajas frecuencias el método más in-
+ dicado es el de lectura por máximos/mínimos. Se podrían usar filtros digi-
+ tales, pero no lo considero necesario, ya que este programa no tiene como
+ propósito ser un recuperador de cintas especialmente deterioradas.

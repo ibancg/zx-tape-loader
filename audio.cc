@@ -1,10 +1,12 @@
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <sys/soundcard.h>
 
+#include "config.h"
 #include "audio.h"
 
 audio::audio(int canales, int frecuencia, int formato)
@@ -14,7 +16,8 @@ audio::audio(int canales, int frecuencia, int formato)
   audio::freq = frecuencia;
 
   // Abre el dsp
-  dsp = open("/dev/dsp", O_RDWR);
+# ifndef LEE_WAV
+  dsp = open("/dev/dsp", O_RDONLY);
   if (dsp < 0)
   {
     perror("No puedo abrir /dev/dsp");
@@ -60,6 +63,15 @@ audio::audio(int canales, int frecuencia, int formato)
     perror("error al poner la frecuencia de muestreo");
     exit(-1);
   }
+# else
+  //dsp = open("/home/kiwi/programacion/cemasmas/sonido/spectrum/waves/ACE.wav", O_RDONLY);
+  dsp = open("/dev/stdin", O_RDONLY);
+  if (dsp < 0)
+  {
+    perror("No puedo abrir el WAV");
+    exit(-1);
+  }
+# endif
 }
 
 audio::~audio()
