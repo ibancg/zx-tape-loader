@@ -3,10 +3,10 @@
 # Makefile para compilar programas en C++
 #
 
-PROYECTO  = load
-FUENTES   = *.cc
+PROYECTO  = loader
+FUENTES   = src/*.cc
 
-C_FLAGS   = $(INCDIR)
+C_FLAGS   = $(INCDIR) -O2 -g -s
 LIBRERIAS =
 LIBS	  =
 INCDIR    =
