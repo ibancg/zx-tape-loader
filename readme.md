@@ -1,8 +1,8 @@
 ZX Tape Loader
 ==============
 
-This program uses implements a PSK demodulator, intended to digitalize old Spectrum tapes by
-loading .wav files and converting them to .tzx files.
+This program implements a PSK demodulator, intended to digitalize old Spectrum tapes by loading
+.wav files and converting them to .tzx files.
 
 
 Compilation
