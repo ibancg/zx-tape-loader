@@ -1,7 +1,8 @@
 ZX Tape Loader
 ==============
 
-Loads .wav files and converts them to .tzx files.
+Digitalize old Spectrum tapes by loading .wav files and converting them to .tzx files.
+
 
 COMPILATION
 ===========
@@ -14,14 +15,13 @@ make
 USAGE
 =====
 
-
-Read from the audio input device (OSS):
+Read from the audio input device (OSS) in real time:
 
 ```
 loader out_file.tzx
 ```
 
-or from a WAV file:
+or from a WAV file in batch mode:
 
 ```
 loader out_file.tzx [in_file.wav]
@@ -163,6 +163,5 @@ Decoding... (press CTRL-C to abort)
 4251165: Lost Carrier
 END of file
 4295029 samples read
-iban@birdo:/pendrive/home/iban/workspace/zx-tape-loader$ 
 ```
 
