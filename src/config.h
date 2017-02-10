@@ -34,7 +34,7 @@ class Config {
 
 private:
 
-  static char* token[];   // config file tokens array.
+  static const char* token[];   // config file tokens array.
   void*        param[7]; // parameter pointer array.
 
   // formats to scan/print tokens from/to the config file.

@@ -29,7 +29,7 @@
 #include "config.h"
 
 // the following tokens will appear in the config file.
-char* Config::token[] = {
+const char* Config::token[] = {
   "AUDIO_DEV",
   "SAMPLE_RATE",
   "NOISE_THRESHOLD",
