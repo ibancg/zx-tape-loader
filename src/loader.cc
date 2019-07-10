@@ -2,57 +2,91 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
+#include <getopt.h>
+#include <sys/stat.h>
 
 #include "defs.h"
 #include "config.h"
 #include "core.h"
 
-char CONFIG_FILE[100];
-
 int main(int argc, char *argv[])
 {
-  /*  bindtextdomain (PACKAGE, LOCALEDIR);
-      textdomain (PACKAGE);*/
+    char CONFIG_FILE[256];
 
-  char* audio_file = NULL;
+    const char* audio_file = nullptr;
+    const char* tzx_file = "out.tzx";
 
-  if ((argc > 3) || (argc == 1))  {
-    printf("\nussage: loader out_file.tzx [in_file.wav]\n\n");
-    return -1;
-  } else if (argc > 2) {
-    audio_file = argv[2];
-  }
+    const char*   short_opt = "i:o:";
+    struct option long_opt[] = {
+        {"help",          no_argument,       NULL, 'h'},
+        {NULL,            0,                 NULL, 0  }
+    };
 
-  sprintf(CONFIG_FILE, "%s/%s", getenv("HOME"), CONFIG_FILE_HOME);
+    int c;
 
-  Config conf; // new configuration object.
+    while((c = getopt_long(argc, argv, short_opt, long_opt, NULL)) != -1) {
+        switch(c) {
+        case -1:       /* no more arguments */
+        case 0:        /* long options toggles */
+            break;
 
-  // if config file doesn't exists, i will create it.
-  FILE* fp;
-  if ((fp = fopen(CONFIG_FILE, "r")) == NULL) {
-    
-    char config_dir[100];
-    sprintf(config_dir, "%s/.loader/", getenv("HOME"));
-    printf("creating directory %s ...\n", config_dir);
-    mkdir(config_dir, 0777); // creo el directorio.
-    printf("creating file %s ...\n", CONFIG_FILE);
-    
-    conf.saveConfigFile(CONFIG_FILE);
-    
-    printf("ok\n");
-    
-  } else {
-    fclose(fp);
-    conf.parseConfigFile(CONFIG_FILE);
-  }
+        case 'i':
+            audio_file = optarg;
+            break;
 
-  Core C(&conf, argv[1], audio_file);
-  C.start();
+        case 'o':
+            tzx_file = optarg;
+            break;
 
-  return 0;
+        case 'h':
+            printf("Usage: %s [OPTIONS]\n\n", argv[0]);
+            printf("  -i infile.wav             input WAV file (read from '/dev/dsp' if omitted)\n");
+            printf("  -o outfile.tzx            output TZX file\n");
+            printf("  -h, --help                print this help and exit\n");
+            printf("\n");
+            return(0);
+
+        case ':':
+        case '?':
+            fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+            return(-2);
+
+        default:
+            fprintf(stderr, "%s: invalid option -- %c\n", argv[0], c);
+            fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+            return(-2);
+        };
+    };
+
+    snprintf(CONFIG_FILE, sizeof(CONFIG_FILE) - 1, "%s/.config/loader/loader.conf", getenv("HOME"));
+
+    Config conf; // new configuration object.
+
+    // if config file doesn't exists, i will create it.
+    FILE* fp = fopen(CONFIG_FILE, "r");
+    if (!fp) {
+
+        char config_dir[256];
+        snprintf(config_dir, sizeof(config_dir) - 1, "%s/.config/loader/", getenv("HOME"));
+        printf("creating directory %s ...\n", config_dir);
+        mkdir(config_dir, 0777); // creo el directorio.
+        printf("creating file %s ...\n", CONFIG_FILE);
+
+        conf.saveConfigFile(CONFIG_FILE);
+
+        printf("ok\n");
+    } else {
+        fclose(fp);
+        conf.parseConfigFile(CONFIG_FILE);
+    }
+
+    Core C(&conf, tzx_file, audio_file);
+    bool ok = C.run();
+
+    if (ok) {
+        printf("Result written to output file '%s'\n", tzx_file);
+    }
+
+    return ok ? 0 : -1;
 }

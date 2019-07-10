@@ -1,25 +1,23 @@
 //-*- C++ -*-
 
-#ifndef __AUDIO_H__
-#define __AUDIO_H__
-
-#include <stdio.h>
+#ifndef AUDIO_H
+#define AUDIO_H
 
 // class for audio input handling.
-class audio
+class Audio
 {
 private:
 
-  int   dsp;  // file handler.
+    int dsp;  // file handler.
 
 public:
-  
-  // open audio dev
-  audio(char* fdsp, int* rate, int channels, int format, bool write);
-  ~audio();
-  
-  int read(void* buffer, int size);
-  int write(void* buffer, int size);
+
+    // open audio dev
+    Audio(char* fdsp, int* rate, int channels, int format, bool write);
+    ~Audio();
+
+    int read(void* buffer, int size);
+    int write(void* buffer, int size);
 };
 
 #endif

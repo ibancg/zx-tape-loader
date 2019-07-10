@@ -1,6 +1,6 @@
 
-#ifndef __DEFS_H__
-#define __DEFS_H__
+#ifndef DEFS_H
+#define DEFS_H
 
 // global definitions.
 
@@ -9,8 +9,6 @@
 
 #define CARRIER_COUNTER_PERIOD  200
 #define EDGE_TRANSIT            3
-
-#define CONFIG_FILE_HOME        ".loader/loader.conf"
 
 #define Z80_FREQ                3.5e6
 

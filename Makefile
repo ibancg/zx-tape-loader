@@ -1,35 +1,31 @@
 
-#
-# Makefile para compilar programas en C++
-#
-
-PROYECTO  = loader
-FUENTES   = src/*.cc
+PROJECT  = loader
+SOURCES   = src/*.cc
 
 C_FLAGS   = $(INCDIR) -O2 -g -s
-LIBRERIAS =
+LIBRARIES =
 LIBS	  =
 INCDIR    =
-COMPILAR  = g++ $(C_FLAGS) -c $< -o $@
-ENLAZAR   = g++ -o $(PROYECTO) $(OBJS) $(LD_FLAGS) $(LIBS)
-EJECUTAR  = ./$(PROYECTO)
+COMPILER  = g++ $(C_FLAGS) -c $< -o $@
+LINKER    = g++ -o $(PROJECT) $(OBJS) $(LD_FLAGS) $(LIBS)
+EXEC      = ./$(PROJECT)
 
-LD_FLAGS = $(addprefix -l,$(LIBRERIAS))
-SRCS = $(wildcard $(FUENTES))
+LD_FLAGS = $(addprefix -l,$(LIBRARIES))
+SRCS = $(wildcard $(SOURCES))
 OBJS = $(SRCS:.cc=.o)
 
-all: $(PROYECTO)
+all: $(PROJECT)
 
-$(PROYECTO): .depend $(OBJS)
-	@echo "Enlazando $(OBJS) -> $@"
-	@$(ENLAZAR)
+$(PROJECT): .depend $(OBJS)
+	@echo "Linking $(OBJS) -> $@"
+	@$(LINKER)
 
 %.o: %.cc .depend
-	@echo "Compilando $<"
-	@$(COMPILAR)
+	@echo "Compiling $<"
+	@$(COMPILER)
 
-run: $(PROYECTO)
-	@$(EJECUTAR)
+run: $(PROJECT)
+	@$(EXEC)
 
 clean:
 	@rm -f $(OBJS)
@@ -38,7 +34,7 @@ clean:
 .PHONY: all run clean
 
 .DEFAULT:
-	@echo "Calculando requisitos"
-	@g++ -M $(FUENTES) > .depend
+	@echo "Computing requirements"
+	@g++ -M $(SOURCES) > .depend
 
 sinclude .depend

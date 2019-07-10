@@ -1,20 +1,22 @@
 //-*- C++ -*-
 
-#ifndef __FILE_H__
-#define __FILE_H__
+#ifndef FILE_H
+#define FILE_H
+
+#include <stdio.h>
 
 class FileReader
 {
 private:
 
-  FILE* file;
+    FILE* file;
 
 public:
-  
-  FileReader(char* name, int* rate);
-  ~FileReader();
-  
-  int read(void* buffer, int size);
+
+    FileReader(const char *name, int* rate);
+    ~FileReader();
+
+    int read(void* buffer, int size);
 };
 
 #endif
