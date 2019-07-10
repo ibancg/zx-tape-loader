@@ -13,11 +13,15 @@ class TzxWriter {
 
 private:
 
-    FILE* f;
+    FILE* file;
 
     void printBlockInfo(unsigned char* buffer, unsigned int size,
                         unsigned int pause);
     void writeTAP(unsigned char* buffer, unsigned int size);
+
+    void write_byte(std::uint8_t);
+    void write_2bytes(std::uint16_t);
+    void write_3bytes(std::uint32_t);
 
 public:
 
@@ -25,10 +29,6 @@ public:
     ~TzxWriter();
 
     void writeID10(unsigned char* buffer, unsigned int size, unsigned int pause);
-
-    void write_byte(std::uint8_t);
-    void write_2bytes(std::uint16_t);
-    void write_3bytes(std::uint32_t);
 };
 
 

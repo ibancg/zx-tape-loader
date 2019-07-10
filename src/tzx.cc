@@ -5,18 +5,18 @@
 
 #include "tzx.h"
 
-TzxWriter::TzxWriter(const char* file)
+TzxWriter::TzxWriter(const char* fileName)
 {
-    f = fopen(file, "wb");
-    if (!f) {
+    file = fopen(fileName, "wb");
+    if (!file) {
         char buff[80];
-        sprintf(buff, "couldn't open output file %s:", file);
+        sprintf(buff, "couldn't open output file %s:", fileName);
         perror(buff);
         exit(-1);
     }
 
     const char* header_str = "ZXTape!";
-    fwrite(header_str, strlen(header_str), 1, f);
+    fwrite(header_str, strlen(header_str), 1, file);
     write_byte(0x1a);
     write_byte(1);  // major
     write_byte(13); // minor
@@ -24,7 +24,7 @@ TzxWriter::TzxWriter(const char* file)
 
 TzxWriter::~TzxWriter()
 {
-    fclose(f);
+    fclose(file);
 }
 
 //----------------------------------------------------------------------------
@@ -75,12 +75,12 @@ void TzxWriter::writeID10(unsigned char* buffer,
 
 void TzxWriter::write_byte(std::uint8_t b)
 {
-    fwrite(&b, 1, 1, f);
+    fwrite(&b, 1, 1, file);
 }
 
 void TzxWriter::write_2bytes(std::uint16_t i)
 {
-    fwrite(&i, 2, 1, f);
+    fwrite(&i, 2, 1, file);
 }
 
 void TzxWriter::write_3bytes(std::uint32_t l)

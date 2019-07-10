@@ -6,8 +6,6 @@
 #include <signal.h>
 
 #include "core.h"
-#include "config.h"
-#include "audio.h"
 #include "filter.h"
 #include "tzx.h"
 #include "file.h"
@@ -21,26 +19,14 @@ void Core::ControlC_Callback(int)
 
 //----------------------------------------------------------------------------
 
-Core::Core(class Config* conf, const char* output_file, const char* input_file)
+Core::Core(const char* output_file, const char* input_file)
 {
     signal(SIGINT, ControlC_Callback);
 
-    Core::conf = conf;
-    audio_handler = nullptr;
     status = s_noise;
     sample_index = 0;
 
-    // band pass order 8 Butterworth IIR filter [ 500, 11025 ] MHz.
-    /*  FLT filter_a[] = {  1.0, -5.970353296423300, 15.684630463761362,
-              -23.789823575255049,     22.870304869869656,
-              -14.295494803078803,     5.671619850401734,
-              -1.304146659000616,      0.133263418499108 };
-              FLT filter_b[] = {  8.74994956444475e-03,   8.88178419700125e-16,
-              -3.49997982577772e-02, -1.06581410364015e-14,
-              5.24996973866863e-02,  -1.24344978758018e-14,
-              -3.49997982577719e-02, -1.99840144432528e-15,
-              8.74994956444503e-03 };*/
-
+    // band pass Butterworth IIR filter [ 500, 11025 ] MHz.
     FLT filter_a[] = { 1.000000000000000,  -3.813865383597037,
                        5.458723791505597,  -3.474942611565117,
                        0.830107707951727 };
@@ -48,30 +34,11 @@ Core::Core(class Config* conf, const char* output_file, const char* input_file)
                        5.466614810482302,  -3.644409873654869,
                        0.911102468413717 };
 
-    /*  FLT filter_a[] = { 1.0000000000000000,  -3.8896606729489767,
-             6.2704960905818350,  -5.9082081390011476,
-             4.0737419054863020,  -2.1213942160058878,
-             0.6596382618828349,  -0.1028467499537180,
-             0.0182722877815612 };
-  FLT filter_b[] = {  8.12342018252348e-02,  -4.44089209850063e-16,
-             -3.24936807300941e-01,   3.55271367880050e-15,
-              4.87405210951404e-01,   2.66453525910038e-15,
-             -3.24936807300941e-01,   4.44089209850063e-16,
-             8.12342018252347e-02 };*/
-
-
     filter = new Filter( 4, 4, filter_a, filter_b );
 
     file_reader = nullptr;
-    audio_handler = nullptr;
 
-    if (input_file) {
-        file_reader = new FileReader(input_file, &conf->SAMPLE_RATE);
-    } else {
-        audio_handler = new Audio(conf->AUDIO_DEV, &conf->SAMPLE_RATE,
-                                  1, SAMPLE_FORMAT, conf->PLAY_SAMPLES);
-    }
-
+    file_reader = new FileReader(input_file, &sample_rate);
     tzx_writer = new TzxWriter(output_file);
 }
 
@@ -79,7 +46,6 @@ Core::Core(class Config* conf, const char* output_file, const char* input_file)
 
 Core::~Core()
 {
-    delete audio_handler;
     delete file_reader;
     delete tzx_writer;
     delete filter;
@@ -93,6 +59,12 @@ bool Core::run()
 
     printf("Decoding... (press CTRL-C to abort)\n");
 
+    FLT noiseThresholdDb  = 37.0; // dB
+    FLT noiseThreshold = pow(10.0, noiseThresholdDb / 10.0);
+    FLT pilotTolerance = 0.4;
+    int pilotMinEdges = 200;
+    FLT bitTolerance = 0.3;
+
     status = s_noise;
     stop = false;
 
@@ -103,8 +75,6 @@ bool Core::run()
     unsigned long int bit_counter[2] = { 0, 0 };
 
     FLT edge_accum = 0;
-
-    FLT F_RATIO = Z80_FREQ/conf->SAMPLE_RATE;
 
     FLT mean, ratio, period, tol;
     FLT pilot_freq, sync1_freq, sync2_freq, bit_freq[2];
@@ -129,7 +99,7 @@ bool Core::run()
         }
 
         // carrier detection.
-        if (fabs(sample) > conf->NOISE_THRESHOLD_UN) {
+        if (fabs(sample) > noiseThreshold) {
 
             carrier_counter = CARRIER_COUNTER_PERIOD;
 
@@ -172,7 +142,7 @@ bool Core::run()
 
                     //	  printf(" L=%0.2f, mean=%0.2f\n", edges[0] - edges[1], mean);
 
-                    if (fabs(ratio) > conf->PILOT_TOLERANCE) {
+                    if (fabs(ratio) > pilotTolerance) {
                         /*	    printf(" warning, not continuous wave at sample %i, edge %i, tol=%0.2f, searching PILOT\n",
             sample_index, edge_counter, ratio);*/
                         edges[0] = edges[1] = edges[2] = 0;
@@ -180,9 +150,9 @@ bool Core::run()
                         edge_accum = 0; // reset status
                     }
 
-                    if (edge_counter == conf->PILOT_MIN_EDGES) {
+                    if (edge_counter == pilotMinEdges) {
 
-                        pilot_freq = 0.5*conf->SAMPLE_RATE/mean;
+                        pilot_freq = 0.5*sample_rate/mean;
                         /*	    FLT freq_ratio = 1.0 - pilot_freq/PILOT_FREQ;
             if (abs(f_ratio) > TOLERANCE2)  {
             printf(" ERROR, f=%f Hz, r=%f\n", f_pilot, f_ratio);
@@ -193,7 +163,7 @@ bool Core::run()
             }*/
 
                         if (end_block) {
-                            after_block_pause = 1000.0*(sample_index - end_block)/conf->SAMPLE_RATE;
+                            after_block_pause = 1000.0*(sample_index - end_block)/sample_rate;
                             //	      printf(" Pause after block: %0.2f ms\n", after_block_pause);
                             tzx_writer->writeID10(data, global_bit_counter >> 3,
                                                   (unsigned int) after_block_pause);
@@ -212,15 +182,15 @@ bool Core::run()
                 mean = edge_accum/(edge_counter - EDGE_TRANSIT + 1);
                 ratio = 1.0 - (edges[0] - edges[1])/mean;
 
-                if (fabs(ratio) > conf->PILOT_TOLERANCE) {
+                if (fabs(ratio) > pilotTolerance) {
 
-                    pilot_freq = 0.5*conf->SAMPLE_RATE/mean;
+                    pilot_freq = 0.5*sample_rate/mean;
 
                     /*	  printf(" PILOT end at sample %i, l=%0.2f T, f=%0.2f Hz, ratio=%f, %i pulses\n",
          sample_index, 0.5*Z80_FREQ/pilot_freq, pilot_freq,
          ratio, edge_counter);*/
 
-                    sync1_freq = 0.5*conf->SAMPLE_RATE/(edges[0] - edges[1]);
+                    sync1_freq = 0.5*sample_rate/(edges[0] - edges[1]);
                     printf(" %i: found SYNC1 f=%0.2f Hz\n", sample_index, sync1_freq);
                     status = s_sync1;
                     continue;
@@ -231,7 +201,7 @@ bool Core::run()
 
             case s_sync1:
 
-                sync2_freq = 0.5*conf->SAMPLE_RATE/(edges[0] - edges[1]);
+                sync2_freq = 0.5*sample_rate/(edges[0] - edges[1]);
                 printf(" %i: found SYNC2 f=%0.2f Hz\n", sample_index, sync2_freq);
                 printf(" getting data\n");
                 status = s_data;
@@ -257,7 +227,7 @@ bool Core::run()
                         mean = bit_accum[flipflop]/bit_counter[flipflop];
                         tol = 1 - period/mean;
 
-                        if (fabs(tol) > conf->BIT_TOLERANCE) {
+                        if (fabs(tol) > bitTolerance) {
                             //	      printf(" bit change: tol=%0.2f\n", tol);
                             if (global_bit_counter <= 7) {
                                 printf(" %i: ERROR: not uniform MARKER, tol=%0.2f\n",
@@ -315,8 +285,8 @@ bool Core::run()
             }
 
             flipflop = reverse ? 1 : 0;
-            bit_freq[0] = 1.0*conf->SAMPLE_RATE*bit_counter[flipflop]/bit_accum[flipflop];
-            bit_freq[1] = 1.0*conf->SAMPLE_RATE*bit_counter[!flipflop]/bit_accum[!flipflop];
+            bit_freq[0] = 1.0*sample_rate*bit_counter[flipflop]/bit_accum[flipflop];
+            bit_freq[1] = 1.0*sample_rate*bit_counter[!flipflop]/bit_accum[!flipflop];
 
             printf("\n %i bytes read (%i bits) , f0=%0.2f Hz, f1=%0.2f Hz, checksum=%X ",
                    global_bit_counter >> 3, global_bit_counter, bit_freq[0], bit_freq[1], checksum);
@@ -352,16 +322,8 @@ int Core::getSample(FLT* sample, FLT* edge)
     static bool  edge_found;
     SAMPLE_TYPE  new_sample;
 
-    if (file_reader) {
-        if (file_reader->read(&new_sample, 1*sizeof(SAMPLE_TYPE)) < 1)
-            return -1;
-    } else {
-        if (audio_handler->read(&new_sample, 1*sizeof(SAMPLE_TYPE)) < 1)
-            return -1;
-        if (conf->PLAY_SAMPLES)
-            if (audio_handler->write(&new_sample, 1*sizeof(SAMPLE_TYPE)) < 1)
-                return -1;
-    }
+    if (file_reader->read(&new_sample, 1*sizeof(SAMPLE_TYPE)) < 1)
+        return -1;
 
     *sample = filter->filter(new_sample);
     //*sample = new_sample;

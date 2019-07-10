@@ -7,8 +7,15 @@
 #include <sys/stat.h>
 
 #include "defs.h"
-#include "config.h"
 #include "core.h"
+
+void print_usage() {
+    printf("Usage: loader [OPTIONS]\n\n");
+    printf("  -i infile.wav             input WAV file\n");
+    printf("  -o outfile.tzx            output TZX file (default 'out.tzx')\n");
+    printf("  -h, --help                print this help and exit\n");
+    printf("\n");
+}
 
 int main(int argc, char *argv[])
 {
@@ -40,11 +47,7 @@ int main(int argc, char *argv[])
             break;
 
         case 'h':
-            printf("Usage: %s [OPTIONS]\n\n", argv[0]);
-            printf("  -i infile.wav             input WAV file (read from '/dev/dsp' if omitted)\n");
-            printf("  -o outfile.tzx            output TZX file\n");
-            printf("  -h, --help                print this help and exit\n");
-            printf("\n");
+            print_usage();
             return(0);
 
         case ':':
@@ -59,30 +62,15 @@ int main(int argc, char *argv[])
         };
     };
 
-    snprintf(CONFIG_FILE, sizeof(CONFIG_FILE) - 1, "%s/.config/loader/loader.conf", getenv("HOME"));
-
-    Config conf; // new configuration object.
-
-    // if config file doesn't exists, i will create it.
-    FILE* fp = fopen(CONFIG_FILE, "r");
-    if (!fp) {
-
-        char config_dir[256];
-        snprintf(config_dir, sizeof(config_dir) - 1, "%s/.config/loader/", getenv("HOME"));
-        printf("creating directory %s ...\n", config_dir);
-        mkdir(config_dir, 0777); // creo el directorio.
-        printf("creating file %s ...\n", CONFIG_FILE);
-
-        conf.saveConfigFile(CONFIG_FILE);
-
-        printf("ok\n");
-    } else {
-        fclose(fp);
-        conf.parseConfigFile(CONFIG_FILE);
+    if (!audio_file) {
+        print_usage();
+        return 0;
     }
 
-    Core C(&conf, tzx_file, audio_file);
-    bool ok = C.run();
+    snprintf(CONFIG_FILE, sizeof(CONFIG_FILE) - 1, "%s/.config/loader/loader.conf", getenv("HOME"));
+
+    Core core(tzx_file, audio_file);
+    bool ok = core.run();
 
     if (ok) {
         printf("Result written to output file '%s'\n", tzx_file);

@@ -22,8 +22,6 @@ class Core {
 
 private:
 
-    Config*     conf;
-    Audio*      audio_handler;
     TzxWriter*  tzx_writer;
     FileReader* file_reader;
 
@@ -42,6 +40,8 @@ private:
     FLT                bit_freq[2];
     FLT                after_block_pause; // signal parameters.
 
+    int                sample_rate;   // soundcard sample rate.
+
     unsigned int       pilot_pulses;
     unsigned long int  global_bit_counter;
 
@@ -52,7 +52,7 @@ private:
 
 public:
 
-    Core(class Config* conf, const char* output_file, const char* input_file);
+    Core(const char* output_file, const char* input_file);
     ~Core();
 
     bool run();
