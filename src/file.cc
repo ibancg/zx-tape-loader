@@ -24,7 +24,9 @@ FileReader::FileReader(const char* name, int* rate)
 
 FileReader::~FileReader()
 {
-    fclose(file);
+    if (file) {
+        fclose(file);
+    }
 }
 
 int FileReader::read(void *buffer, int size)

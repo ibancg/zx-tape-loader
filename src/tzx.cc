@@ -24,7 +24,9 @@ TzxWriter::TzxWriter(const char* fileName)
 
 TzxWriter::~TzxWriter()
 {
-    fclose(file);
+    if (file) {
+        fclose(file);
+    }
 }
 
 //----------------------------------------------------------------------------
